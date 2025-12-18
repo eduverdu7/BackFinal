@@ -1,33 +1,68 @@
 import { gql } from "apollo-server";
 
-
-
 export const typeDefs = gql`
 
-    type User {
-        _id: ID!
-        email: String!
-        clothes: [Clothing]!
-    }
+  enum PokemonType {
+    NORMAL
+    FIRE
+    WATER
+    ELECTRIC
+    GRASS
+    ICE
+    FIGHTING
+    POISON
+    GROUND
+    FLYING
+    PSYCHIC
+    BUG
+    ROCK
+    GHOST
+    DRAGON
+  }
 
-    type Clothing {
-        _id: ID!
-        name: String!
-        size: String!
-        color: String!
-        price: Float!
-    }
+  type Pokemon {
+    _id: ID!
+    name: String!
+    description: String!
+    height: Float!
+    weight: Float!
+    types: [PokemonType!]!
+  }
 
-    type Query {
-        me: User
-        clothes(page: Int, size: Int): [Clothing]!
-        clothing(id: ID!): Clothing
-    }
+  type OwnedPokemon {
+    _id: ID!
+    pokemon: Pokemon!
+    nickname: String
+    attack: Int!
+    defense: Int!
+    speed: Int!
+    special: Int!
+    level: Int!
+  }
 
-    type Mutation {
-        addClothing(name: String!, size: String!, color: String!, price: Float!): Clothing!
-        buyClothing(clothingId: ID!): User!
-        register(email: String!, password: String!): String!
-        login(email: String!, password: String!): String!
-    }
-`
+  type Trainer {
+    _id: ID!
+    name: String!
+    pokemons: [OwnedPokemon]!
+  }
+
+  type Query {
+    me: Trainer
+    pokemons(page: Int, size: Int): [Pokemon]!
+    pokemon(id: ID!): Pokemon
+  }
+
+  type Mutation {
+    startJourney(name: String!, password: String!): String!
+    login(name: String!, password: String!): String!
+    createPokemon(
+      name: String!
+      description: String!
+      height: Float!
+      weight: Float!
+      types: [PokemonType!]!
+    ): Pokemon!
+    catchPokemon(pokemonId: ID!, nickname: String): OwnedPokemon!
+    freePokemon(ownedPokemonId: ID!): Trainer!
+  }
+`;

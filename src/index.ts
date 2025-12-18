@@ -18,9 +18,8 @@ const start = async () => {
   });
 
   await server.listen({ port: 4000 });
-  console.log("GQL sirviendo y de to");
+  console.log("GQL sirviendo");
 };
-
 
 
 start().catch(err=>console.error(err));

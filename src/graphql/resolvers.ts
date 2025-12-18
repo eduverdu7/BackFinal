@@ -1,59 +1,73 @@
 import { IResolvers } from "@graphql-tools/utils";
-import { addClothing, buyClothing, getClothes, getClothingById } from "../collections/productsClothingStore";
-import { createUser, validateUser } from "../collections/usersClothingStore";
+import { getPokemons, getPokemonById, createPokemon } from "../collections/pokemons";
+import { startJourney, loginTrainer } from "../collections/trainers";
+import { catchPokemon, freePokemon } from "../collections/ownedPokemons";
 import { signToken } from "../auth";
-import { ClothingUser } from "../types";
 import { getDB } from "../db/mongo";
 import { ObjectId } from "mongodb";
-
-
-
-
+import { COLLECTION_OWNED, COLLECTION_POKEMONS } from "../utils";
 
 export const resolvers: IResolvers = {
-    Query: {
-        clothes: async (_, { page, size }) => {
-            return await getClothes(page, size);
-        },
-        clothing: async (_, { id }) => {
-            return await getClothingById(id);
-        },
-        me: async (_, __, { user }) => {
-            if(!user) return null;
-            return {
-                _id: user._id.toString(),
-                ...user
-            }
-        }
+  Query: {
+    me: (_: any, __: any, { user }: any) => user ?? null,
+
+    pokemons: (_: any, { page, size }: any) =>
+      getPokemons(page, size),
+
+    pokemon: (_: any, { id }: any) =>
+      getPokemonById(id)
+  },
+  
+  Mutation: {
+    startJourney: async (_: any, { name, password }: any) =>
+      signToken(await startJourney(name, password)),
+
+    login: async (_: any, { name, password }: any) => {
+      const trainer = await loginTrainer(name, password);
+      if (!trainer) throw new Error("Invalid credentials");
+      return signToken(trainer._id.toString());
     },
-    Mutation: {
-        addClothing: async (_, { name, size, color, price }) => {
-            return await addClothing(name, size, color, price);
-        },
-        buyClothing: async (_, { clothingId }, { user }) => {
-            if(!user) throw new Error("You must be logged in to buy clothes");
-            return await buyClothing(clothingId, user._id.toString());
-        },
-        register: async (_, { email, password }) => {
-            const userId = await createUser(email, password);
-            return signToken(userId);
-        },
-        login: async (_, { email, password }) => {
-            const user = await validateUser(email, password);
-            if(!user) throw new Error("Invalid credentials");
-            return signToken(user._id.toString());
-        }
+
+    createPokemon: async (_: any, args: any, { user }: any) => {
+      if (!user) throw new Error("Not authenticated");
+      return createPokemon(
+        args.name,
+        args.description,
+        args.height,
+        args.weight,
+        args.types
+      );
     },
-    User: {
-        clothes: async (parent: ClothingUser) => {
-            const db = getDB();
-            const listaDeIdsDeRopa = parent.clothes;
-            if(!listaDeIdsDeRopa) return [];
-            const objectIds = listaDeIdsDeRopa.map((id) => new ObjectId(id));
-            return db
-                .collection("productsClothingStore")
-                .find({ _id: { $in: objectIds } })
-                .toArray();
-        }
+
+    catchPokemon: async (_: any, { pokemonId, nickname }: any, { user }: any) => {
+      if (!user) throw new Error("Not authenticated");
+      return catchPokemon(pokemonId, nickname, user._id.toString());
+    },
+
+    freePokemon: async (_: any, { ownedPokemonId }: any, { user }: any) => {
+      if (!user) throw new Error("Not authenticated");
+      return freePokemon(ownedPokemonId, user._id.toString());
     }
-}
+  },
+
+  Trainer: {
+    pokemons: async (parent: any) => {
+      if (!parent.pokemons || parent.pokemons.length === 0) return [];
+      const db = getDB();
+      const ids = parent.pokemons.map((id: string) => new ObjectId(id));
+      return db
+        .collection(COLLECTION_OWNED)
+        .find({ _id: { $in: ids } })
+        .toArray();
+    }
+  },
+
+  OwnedPokemon: {
+    pokemon: async (parent: any) => {
+      const db = getDB();
+      return db
+        .collection(COLLECTION_POKEMONS)
+        .findOne({ _id: new ObjectId(parent.pokemonId) });
+    }
+  }
+};

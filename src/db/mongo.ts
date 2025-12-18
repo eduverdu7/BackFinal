@@ -14,13 +14,13 @@ export const connectToMongoDB = async () => {
             client = new MongoClient(mongoUrl);
             await client.connect();
             dB = client.db(dbName);
-            console.log("Estás conectado al mondongo cosa guapa!");
+            console.log("Estás conectado al mongo");
         } else {
             throw new Error("MONGO_URL is not defined in environment variables");
         }
     }
     catch(err){
-        console.log("Error del mondongo baby: ", err)
+        console.log("Error del mongo: ", err)
     }
 };
 

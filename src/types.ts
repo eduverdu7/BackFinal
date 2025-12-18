@@ -1,11 +1,7 @@
+import { ObjectId } from "mongodb";
 
-
-
-
-
-
-export type ClothingUser = {
-    _id: string;
-    email: string;
-    clothes: string[];
+export interface Trainer {
+  _id: ObjectId;
+  name: string;
+  pokemons: ObjectId[];
 }
